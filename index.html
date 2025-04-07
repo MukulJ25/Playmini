@@ -1,917 +1,1573 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Games Collection</title>
+    <title>PlayMini - Small Catchy Games</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css">
     <style>
-        /* Game-specific styles */
+        /* Custom Styles */
+        .game-card {
+            transition: all 0.3s ease;
+        }
+        .game-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+        .memory-card {
+            width: 100px;
+            height: 100px;
+            perspective: 1000px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        .memory-card-inner {
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            position: relative;
+        }
+        .memory-card.flipped .memory-card-inner {
+            transform: rotateY(180deg);
+        }
+        .memory-card-front, .memory-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 5px;
+        }
+        .memory-card-front {
+            background-color: #2a76dd;
+        }
+        .memory-card-back {
+            background-color: white;
+            transform: rotateY(180deg);
+            font-size: 40px;
+        }
+        #snake-game {
+            border: 2px solid #333;
+            background-color: #f8f8f8;
+        }
+        #clicker-game {
+            width: 300px;
+            height: 300px;
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            transition: transform 0.1s;
+        }
+        #clicker-game:active {
+            transform: scale(0.95);
+        }
+        .color-tile {
+            width: 80px;
+            height: 80px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+        .color-tile:hover {
+            transform: scale(1.05);
+        }
         .game-container {
             display: none;
         }
         .game-container.active {
             display: block;
         }
-        
-        /* Snake Game */
-        #snake-game {
-            background-color: #000;
-            position: relative;
+        .tab-active {
+            background-color: #4F46E5;
+            color: white;
         }
-        .snake-pixel {
-            position: absolute;
-            background-color: #0f0;
-            border-radius: 2px;
-        }
-        .food-pixel {
-            position: absolute;
-            background-color: #f00;
-            border-radius: 50%;
-        }
-        
-        /* Tic Tac Toe */
-        .cell {
+        /* Tic Tac Toe Styles */
+        .ttt-cell {
             width: 100px;
             height: 100px;
             border: 2px solid #333;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 40px;
-            cursor: pointer;
-            background-color: #f8f9fa;
-        }
-        
-        /* Memory Game */
-        .memory-card {
-            width: 100px;
-            height: 100px;
-            margin: 5px;
-            position: relative;
-            transform-style: preserve-3d;
-            transition: transform 0.5s;
+            font-size: 3rem;
+            font-weight: bold;
             cursor: pointer;
         }
-        .memory-card.flip {
-            transform: rotateY(180deg);
+        .ttt-cell:hover {
+            background-color: #f0f0f0;
         }
-        .front-face, .back-face {
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            backface-visibility: hidden;
-            border-radius: 5px;
-        }
-        .front-face {
-            transform: rotateY(180deg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 36px;
-            background-color: #fff;
-            color: #333;
-            border: 2px solid #333;
-        }
-        .back-face {
-            background-color: #2980b9;
-            border: 2px solid #333;
-        }
-        
-        /* 2048 Game */
-        .grid-2048 {
+        .ttt-board {
             display: grid;
-            grid-template-columns: repeat(4, 80px);
-            grid-template-rows: repeat(4, 80px);
-            gap: 10px;
-            background-color: #bbada0;
-            border-radius: 5px;
-            padding: 10px;
+            grid-template-columns: repeat(3, auto);
+            width: 306px;
+            margin: 0 auto;
         }
-        .grid-cell {
-            background-color: #cdc1b4;
-            border-radius: 5px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 24px;
-            font-weight: bold;
+        .ttt-x {
+            color: #E53E3E;
         }
-        .tile {
-            width: 80px;
-            height: 80px;
-            border-radius: 5px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 24px;
-            font-weight: bold;
-            color: #776e65;
+        .ttt-o {
+            color: #3B82F6;
         }
-        .tile-2 { background-color: #eee4da; }
-        .tile-4 { background-color: #ede0c8; }
-        .tile-8 { background-color: #f2b179; color: #f9f6f2; }
-        .tile-16 { background-color: #f59563; color: #f9f6f2; }
-        .tile-32 { background-color: #f67c5f; color: #f9f6f2; }
-        .tile-64 { background-color: #f65e3b; color: #f9f6f2; }
-        .tile-128 { background-color: #edcf72; color: #f9f6f2; font-size: 20px; }
-        .tile-256 { background-color: #edcc61; color: #f9f6f2; font-size: 20px; }
-        .tile-512 { background-color: #edc850; color: #f9f6f2; font-size: 20px; }
-        .tile-1024 { background-color: #edc53f; color: #f9f6f2; font-size: 18px; }
-        .tile-2048 { background-color: #edc22e; color: #f9f6f2; font-size: 18px; }
+        /* Hummingbird Game Styles */
+        #hummingbird-game {
+            border: 2px solid #333;
+            background-color: #87CEEB;
+        }
+        /* Flappy Bird Game Styles */
+        #flappy-game {
+            border: 2px solid #333;
+            background-color: #4FC3F7;
+        }
     </style>
 </head>
 <body class="bg-gray-100 font-sans">
-    <div class="container mx-auto px-4 py-8">
-        <h1 class="text-4xl font-bold text-center mb-6 text-blue-600">Simple Games Collection</h1>
-        
-        <!-- Game Navigation -->
-        <div class="flex justify-center mb-8">
-            <button id="snake-btn" class="game-nav-btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mx-2">Snake</button>
-            <button id="tictactoe-btn" class="game-nav-btn bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded mx-2">Tic Tac Toe</button>
-            <button id="memory-btn" class="game-nav-btn bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded mx-2">Memory Match</button>
-            <button id="2048-btn" class="game-nav-btn bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded mx-2">2048</button>
-        </div>
-        
-        <!-- Snake Game -->
-        <div id="snake-container" class="game-container">
-            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-                <h2 class="text-2xl font-bold mb-4 text-center">Snake Game</h2>
-                <div class="flex flex-col items-center">
-                    <div class="mb-4">
-                        <span class="font-bold">Score: </span>
-                        <span id="snake-score">0</span>
-                    </div>
-                    <div id="snake-game" class="w-96 h-96 border border-gray-400"></div>
-                    <button id="snake-start" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Start Game</button>
+    <!-- Header -->
+    <header class="bg-white shadow">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center">
+                    <h1 class="text-3xl font-bold text-indigo-600">Play<span class="text-gray-800">Mini</span></h1>
                 </div>
-                <div class="mt-6 text-gray-700">
-                    <h3 class="font-bold text-lg mb-2">Instructions:</h3>
-                    <ul class="list-disc pl-6">
-                        <li>Use arrow keys to move the snake</li>
-                        <li>Eat the red food to grow and score points</li>
-                        <li>Avoid hitting the walls or yourself</li>
-                        <li>Press the Start Game button to begin</li>
-                    </ul>
+                <nav class="hidden md:flex space-x-10">
+                    <a href="#" class="text-gray-800 hover:text-indigo-600 transition">Home</a>
+                    <a href="#games" class="text-gray-800 hover:text-indigo-600 transition">Games</a>
+                    <a href="#about" class="text-gray-800 hover:text-indigo-600 transition">About</a>
+                </nav>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="text-gray-800 hover:text-indigo-600">
+                        <i class="fas fa-bars text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="mobile-menu" class="md:hidden hidden mt-4">
+                <a href="#" class="block py-2 text-gray-800 hover:text-indigo-600">Home</a>
+                <a href="#games" class="block py-2 text-gray-800 hover:text-indigo-600">Games</a>
+                <a href="#about" class="block py-2 text-gray-800 hover:text-indigo-600">About</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="bg-indigo-700 text-white py-20">
+        <div class="container mx-auto px-4 text-center">
+            <h2 class="text-4xl md:text-5xl font-bold mb-6">Quick Games, Big Fun!</h2>
+            <p class="text-xl md:text-2xl mb-8">Enjoy our collection of small but incredibly addictive games</p>
+            <a href="#games" class="bg-white text-indigo-700 font-bold py-3 px-8 rounded-full hover:bg-gray-100 transition">Play Now</a>
+        </div>
+    </section>
+
+    <!-- Games Gallery -->
+    <section id="games" class="py-16">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-12">Our Games</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <!-- Memory Game -->
+                <div class="game-card bg-white rounded-lg overflow-hidden shadow-lg">
+                    <div class="p-4">
+                        <div class="bg-indigo-100 h-40 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-brain text-5xl text-indigo-500"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mt-4 mb-2">Memory Match</h3>
+                        <p class="text-gray-600 mb-4">Test your memory by matching pairs of cards.</p>
+                        <button class="play-button w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700 transition" data-game="memory">Play Game</button>
+                    </div>
+                </div>
+
+                <!-- Snake Game -->
+                <div class="game-card bg-white rounded-lg overflow-hidden shadow-lg">
+                    <div class="p-4">
+                        <div class="bg-green-100 h-40 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-snake text-5xl text-green-500"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mt-4 mb-2">Snake Classic</h3>
+                        <p class="text-gray-600 mb-4">Control the snake and eat as much food as possible.</p>
+                        <button class="play-button w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition" data-game="snake">Play Game</button>
+                    </div>
+                </div>
+
+                <!-- Clicker Game -->
+                <div class="game-card bg-white rounded-lg overflow-hidden shadow-lg">
+                    <div class="p-4">
+                        <div class="bg-purple-100 h-40 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-hand-pointer text-5xl text-purple-500"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mt-4 mb-2">Speed Clicker</h3>
+                        <p class="text-gray-600 mb-4">How many clicks can you make in 10 seconds?</p>
+                        <button class="play-button w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700 transition" data-game="clicker">Play Game</button>
+                    </div>
+                </div>
+
+                <!-- Color Match Game -->
+                <div class="game-card bg-white rounded-lg overflow-hidden shadow-lg">
+                    <div class="p-4">
+                        <div class="bg-blue-100 h-40 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-palette text-5xl text-blue-500"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mt-4 mb-2">Color Match</h3>
+                        <p class="text-gray-600 mb-4">Find the odd color out as fast as you can.</p>
+                        <button class="play-button w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition" data-game="color">Play Game</button>
+                    </div>
+                </div>
+                
+                <!-- Tic Tac Toe Game -->
+                <div class="game-card bg-white rounded-lg overflow-hidden shadow-lg">
+                    <div class="p-4">
+                        <div class="bg-red-100 h-40 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-th text-5xl text-red-500"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mt-4 mb-2">Tic Tac Toe</h3>
+                        <p class="text-gray-600 mb-4">Classic X and O game with a smart AI opponent.</p>
+                        <button class="play-button w-full bg-red-600 text-white py-2 rounded hover:bg-red-700 transition" data-game="tictactoe">Play Game</button>
+                    </div>
+                </div>
+                
+                <!-- Hummingbird Game -->
+                <div class="game-card bg-white rounded-lg overflow-hidden shadow-lg">
+                    <div class="p-4">
+                        <div class="bg-teal-100 h-40 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-feather-alt text-5xl text-teal-500"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mt-4 mb-2">Hummingbird</h3>
+                        <p class="text-gray-600 mb-4">Collect nectar while avoiding obstacles.</p>
+                        <button class="play-button w-full bg-teal-600 text-white py-2 rounded hover:bg-teal-700 transition" data-game="hummingbird">Play Game</button>
+                    </div>
+                </div>
+                
+                <!-- Flappy Bird Game -->
+                <div class="game-card bg-white rounded-lg overflow-hidden shadow-lg">
+                    <div class="p-4">
+                        <div class="bg-yellow-100 h-40 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-bird text-5xl text-yellow-500"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mt-4 mb-2">Flappy Bird</h3>
+                        <p class="text-gray-600 mb-4">Navigate through pipes by tapping to fly higher.</p>
+                        <button class="play-button w-full bg-yellow-600 text-white py-2 rounded hover:bg-yellow-700 transition" data-game="flappy">Play Game</button>
+                    </div>
                 </div>
             </div>
         </div>
-        
-        <!-- Tic Tac Toe Game -->
-        <div id="tictactoe-container" class="game-container">
-            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-                <h2 class="text-2xl font-bold mb-4 text-center">Tic Tac Toe</h2>
-                <div class="flex flex-col items-center">
-                    <div id="status" class="mb-4 font-bold">Player X's turn</div>
-                    <div class="grid grid-cols-3 gap-0 mb-4">
-                        <div class="cell" data-index="0"></div>
-                        <div class="cell" data-index="1"></div>
-                        <div class="cell" data-index="2"></div>
-                        <div class="cell" data-index="3"></div>
-                        <div class="cell" data-index="4"></div>
-                        <div class="cell" data-index="5"></div>
-                        <div class="cell" data-index="6"></div>
-                        <div class="cell" data-index="7"></div>
-                        <div class="cell" data-index="8"></div>
-                    </div>
-                    <button id="reset-ttt" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">Reset Game</button>
-                </div>
-                <div class="mt-6 text-gray-700">
-                    <h3 class="font-bold text-lg mb-2">Instructions:</h3>
-                    <ul class="list-disc pl-6">
-                        <li>Players take turns placing X and O on the board</li>
-                        <li>First player to get 3 in a row (horizontally, vertically, or diagonally) wins</li>
-                        <li>If all cells are filled without a winner, the game is a draw</li>
-                    </ul>
-                </div>
+    </section>
+
+    <!-- Game Modal -->
+    <div id="game-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg w-11/12 md:w-3/4 lg:w-1/2 max-h-screen overflow-y-auto">
+            <div class="border-b px-4 py-2 flex justify-between items-center">
+                <h3 id="modal-title" class="text-xl font-bold text-gray-800">Game Title</h3>
+                <button id="close-modal" class="text-gray-600 hover:text-gray-800">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
             </div>
-        </div>
-        
-        <!-- Memory Match Game -->
-        <div id="memory-container" class="game-container">
-            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-                <h2 class="text-2xl font-bold mb-4 text-center">Memory Match</h2>
-                <div class="flex flex-col items-center">
-                    <div class="mb-4">
-                        <span class="font-bold">Moves: </span>
-                        <span id="moves">0</span>
+            <div class="p-4">
+                <!-- Memory Game -->
+                <div id="memory-game" class="game-container">
+                    <div class="text-center mb-6">
+                        <p class="text-lg mb-2">Match all the pairs to win!</p>
+                        <p id="memory-moves" class="font-bold">Moves: 0</p>
                     </div>
-                    <div id="memory-game" class="grid grid-cols-4 gap-2 mb-4"></div>
-                    <button id="reset-memory" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded">Reset Game</button>
+                    <div class="flex flex-wrap justify-center" id="memory-board"></div>
                 </div>
-                <div class="mt-6 text-gray-700">
-                    <h3 class="font-bold text-lg mb-2">Instructions:</h3>
-                    <ul class="list-disc pl-6">
-                        <li>Click on cards to flip them over</li>
-                        <li>Try to find matching pairs of symbols</li>
-                        <li>Once a pair is found, those cards stay flipped</li>
-                        <li>The game is complete when all pairs are matched</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-        
-        <!-- 2048 Game -->
-        <div id="2048-container" class="game-container">
-            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-                <h2 class="text-2xl font-bold mb-4 text-center">2048</h2>
-                <div class="flex flex-col items-center">
-                    <div class="mb-4">
-                        <span class="font-bold">Score: </span>
-                        <span id="score-2048">0</span>
+
+                <!-- Snake Game -->
+                <div id="snake-game-container" class="game-container">
+                    <div class="text-center mb-6">
+                        <p class="text-lg mb-2">Use arrow keys to control the snake</p>
+                        <p id="snake-score" class="font-bold">Score: 0</p>
                     </div>
-                    <div class="grid-2048 mb-4"></div>
-                    <button id="reset-2048" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded">New Game</button>
+                    <div class="flex justify-center">
+                        <canvas id="snake-game" width="400" height="400"></canvas>
+                    </div>
+                    <div class="mt-4 text-center">
+                        <button id="start-snake" class="bg-green-600 text-white py-2 px-6 rounded hover:bg-green-700 transition">Start Game</button>
+                    </div>
                 </div>
-                <div class="mt-6 text-gray-700">
-                    <h3 class="font-bold text-lg mb-2">Instructions:</h3>
-                    <ul class="list-disc pl-6">
-                        <li>Use arrow keys to move tiles</li>
-                        <li>When two tiles with the same number touch, they merge into one</li>
-                        <li>Try to create a tile with the number 2048</li>
-                        <li>If the grid fills up and no more moves are possible, the game is over</li>
-                    </ul>
+
+                <!-- Clicker Game -->
+                <div id="clicker-game-container" class="game-container">
+                    <div class="text-center mb-6">
+                        <p class="text-lg mb-2">Click as fast as you can in 10 seconds!</p>
+                        <p id="clicker-score" class="font-bold">Clicks: 0</p>
+                        <p id="clicker-timer" class="text-xl mt-2">Time: 10s</p>
+                    </div>
+                    <div class="flex justify-center">
+                        <div id="clicker-game">
+                            <span class="text-white text-2xl font-bold">CLICK!</span>
+                        </div>
+                    </div>
+                    <div class="mt-4 text-center">
+                        <button id="start-clicker" class="bg-purple-600 text-white py-2 px-6 rounded hover:bg-purple-700 transition">Start Game</button>
+                    </div>
+                </div>
+
+                <!-- Color Match Game -->
+                <div id="color-game" class="game-container">
+                    <div class="text-center mb-6">
+                        <p class="text-lg mb-2">Find the tile with a different color!</p>
+                        <p id="color-score" class="font-bold">Score: 0</p>
+                        <p id="color-timer" class="text-xl mt-2">Time: 30s</p>
+                    </div>
+                    <div class="flex flex-wrap justify-center" id="color-board"></div>
+                    <div class="mt-4 text-center">
+                        <button id="start-color" class="bg-blue-600 text-white py-2 px-6 rounded hover:bg-blue-700 transition">Start Game</button>
+                    </div>
+                </div>
+                
+                <!-- Tic Tac Toe Game -->
+                <div id="tictactoe-game" class="game-container">
+                    <div class="text-center mb-6">
+                        <p class="text-lg mb-2">Classic Tic Tac Toe - get three in a row!</p>
+                        <p id="ttt-status" class="font-bold">Your turn (X)</p>
+                    </div>
+                    <div class="ttt-board" id="ttt-board">
+                        <div class="ttt-cell" data-cell-index="0"></div>
+                        <div class="ttt-cell" data-cell-index="1"></div>
+                        <div class="ttt-cell" data-cell-index="2"></div>
+                        <div class="ttt-cell" data-cell-index="3"></div>
+                        <div class="ttt-cell" data-cell-index="4"></div>
+                        <div class="ttt-cell" data-cell-index="5"></div>
+                        <div class="ttt-cell" data-cell-index="6"></div>
+                        <div class="ttt-cell" data-cell-index="7"></div>
+                        <div class="ttt-cell" data-cell-index="8"></div>
+                    </div>
+                    <div class="mt-4 text-center">
+                        <button id="restart-ttt" class="bg-red-600 text-white py-2 px-6 rounded hover:bg-red-700 transition">Restart Game</button>
+                    </div>
+                </div>
+                
+                <!-- Hummingbird Game -->
+                <div id="hummingbird-game-container" class="game-container">
+                    <div class="text-center mb-6">
+                        <p class="text-lg mb-2">Use up/down arrow keys or tap to control the hummingbird</p>
+                        <p id="hummingbird-score" class="font-bold">Score: 0</p>
+                    </div>
+                    <div class="flex justify-center">
+                        <canvas id="hummingbird-game" width="500" height="400"></canvas>
+                    </div>
+                    <div class="mt-4 text-center">
+                        <button id="start-hummingbird" class="bg-teal-600 text-white py-2 px-6 rounded hover:bg-teal-700 transition">Start Game</button>
+                    </div>
+                </div>
+                
+                <!-- Flappy Bird Game -->
+                <div id="flappy-game-container" class="game-container">
+                    <div class="text-center mb-6">
+                        <p class="text-lg mb-2">Press space or tap to make the bird fly</p>
+                        <p id="flappy-score" class="font-bold">Score: 0</p>
+                    </div>
+                    <div class="flex justify-center">
+                        <canvas id="flappy-game" width="320" height="480"></canvas>
+                    </div>
+                    <div class="mt-4 text-center">
+                        <button id="start-flappy" class="bg-yellow-600 text-white py-2 px-6 rounded hover:bg-yellow-700 transition">Start Game</button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- About Section -->
+    <section id="about" class="py-16 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <div class="max-w-3xl mx-auto text-center">
+                <h2 class="text-3xl font-bold mb-6">About PlayMini</h2>
+                <p class="text-lg text-gray-700 mb-8">PlayMini offers a collection of simple yet addictive mini-games that you can enjoy during short breaks. Our games are designed to be easy to learn but challenging to master.</p>
+                <p class="text-lg text-gray-700">Whether you have a minute or an hour to spare, our games provide the perfect casual gaming experience. Challenge yourself, beat your high scores, and have fun!</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <h2 class="text-2xl font-bold">Play<span class="text-indigo-400">Mini</span></h2>
+                    <p class="text-gray-400 mt-2">Small games, big entertainment</p>
+                </div>
+                <div class="flex space-x-6">
+                    <a href="#" class="text-gray-400 hover:text-white transition"><i class="fab fa-facebook-f text-xl"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white transition"><i class="fab fa-twitter text-xl"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white transition"><i class="fab fa-instagram text-xl"></i></a>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2023 PlayMini. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
     <script>
-        // Navigation
-        document.addEventListener('DOMContentLoaded', () => {
-            const gameContainers = document.querySelectorAll('.game-container');
-            const gameButtons = document.querySelectorAll('.game-nav-btn');
-            
-            // Show Snake Game by default
-            document.getElementById('snake-container').classList.add('active');
-            
-            gameButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const gameId = button.id.split('-')[0] + '-container';
-                    
-                    // Hide all game containers
-                    gameContainers.forEach(container => {
-                        container.classList.remove('active');
-                    });
-                    
-                    // Show selected game container
-                    document.getElementById(gameId).classList.add('active');
+        // Mobile Menu Toggle
+        document.getElementById('mobile-menu-button').addEventListener('click', function() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // Modal Logic
+        const modal = document.getElementById('game-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const closeModal = document.getElementById('close-modal');
+        const playButtons = document.querySelectorAll('.play-button');
+        const gameContainers = document.querySelectorAll('.game-container');
+
+        closeModal.addEventListener('click', function() {
+            modal.classList.add('hidden');
+            gameContainers.forEach(container => {
+                container.classList.remove('active');
+            });
+            // Stop any running games
+            if (snakeInterval) clearInterval(snakeInterval);
+            if (clickerInterval) clearInterval(clickerInterval);
+            if (colorInterval) clearInterval(colorInterval);
+            if (hummingbirdInterval) clearInterval(hummingbirdInterval);
+            if (flappyInterval) clearInterval(flappyInterval);
+        });
+
+        playButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const gameType = this.getAttribute('data-game');
+                modalTitle.textContent = this.parentNode.querySelector('h3').textContent;
+                modal.classList.remove('hidden');
+                
+                gameContainers.forEach(container => {
+                    container.classList.remove('active');
                 });
+                
+                switch(gameType) {
+                    case 'memory':
+                        document.getElementById('memory-game').classList.add('active');
+                        setupMemoryGame();
+                        break;
+                    case 'snake':
+                        document.getElementById('snake-game-container').classList.add('active');
+                        // Snake game starts with button click
+                        break;
+                    case 'clicker':
+                        document.getElementById('clicker-game-container').classList.add('active');
+                        // Clicker game starts with button click
+                        break;
+                    case 'color':
+                        document.getElementById('color-game').classList.add('active');
+                        // Color match game starts with button click
+                        break;
+                    case 'tictactoe':
+                        document.getElementById('tictactoe-game').classList.add('active');
+                        setupTicTacToe();
+                        break;
+                    case 'hummingbird':
+                        document.getElementById('hummingbird-game-container').classList.add('active');
+                        // Hummingbird game starts with button click
+                        break;
+                    case 'flappy':
+                        document.getElementById('flappy-game-container').classList.add('active');
+                        // Flappy game starts with button click
+                        break;
+                }
+            });
+        });
+
+        // Memory Game Logic
+        function setupMemoryGame() {
+            const memoryBoard = document.getElementById('memory-board');
+            const memoryMoves = document.getElementById('memory-moves');
+            let moves = 0;
+            let hasFlippedCard = false;
+            let lockBoard = false;
+            let firstCard, secondCard;
+            let pairs = 0;
+            const totalPairs = 6;
+            
+            memoryBoard.innerHTML = '';
+            memoryMoves.textContent = 'Moves: 0';
+            moves = 0;
+            pairs = 0;
+            
+            const symbols = ['♠', '♥', '♦', '♣', '★', '☻', '♠', '♥', '♦', '♣', '★', '☻'];
+            shuffleArray(symbols);
+            
+            symbols.forEach((symbol, index) => {
+                const card = document.createElement('div');
+                card.className = 'memory-card';
+                card.innerHTML = `
+                    <div class="memory-card-inner">
+                        <div class="memory-card-front"></div>
+                        <div class="memory-card-back">${symbol}</div>
+                    </div>
+                `;
+                card.addEventListener('click', flipCard);
+                card.setAttribute('data-symbol', symbol);
+                memoryBoard.appendChild(card);
             });
             
-            // Initialize all games
-            initSnakeGame();
-            initTicTacToe();
-            initMemoryGame();
-            init2048Game();
-        });
-        
-        // Snake Game
-        function initSnakeGame() {
-            const gameBoard = document.getElementById('snake-game');
-            const scoreDisplay = document.getElementById('snake-score');
-            const startButton = document.getElementById('snake-start');
-            
-            const boardSize = 20; // 20x20 grid
-            const pixelSize = Math.floor(gameBoard.offsetWidth / boardSize);
-            let snake = [{x: 10, y: 10}]; // Start with 1 segment
-            let food = {x: 15, y: 15};
-            let direction = 'right';
-            let nextDirection = 'right';
-            let score = 0;
-            let gameInterval;
-            let isGameOver = false;
-            
-            function drawPixel(x, y, className) {
-                const pixel = document.createElement('div');
-                pixel.classList.add(className);
-                pixel.style.width = `${pixelSize}px`;
-                pixel.style.height = `${pixelSize}px`;
-                pixel.style.left = `${x * pixelSize}px`;
-                pixel.style.top = `${y * pixelSize}px`;
-                gameBoard.appendChild(pixel);
-            }
-            
-            function clearBoard() {
-                while (gameBoard.firstChild) {
-                    gameBoard.removeChild(gameBoard.firstChild);
-                }
-            }
-            
-            function drawGame() {
-                clearBoard();
+            function flipCard() {
+                if (lockBoard) return;
+                if (this === firstCard) return;
                 
-                // Draw snake
-                snake.forEach(segment => {
-                    drawPixel(segment.x, segment.y, 'snake-pixel');
-                });
+                this.classList.add('flipped');
                 
-                // Draw food
-                drawPixel(food.x, food.y, 'food-pixel');
-            }
-            
-            function moveSnake() {
-                if (isGameOver) return;
-                
-                // Update direction
-                direction = nextDirection;
-                
-                // Calculate new head position
-                const head = {...snake[0]};
-                
-                switch (direction) {
-                    case 'up': head.y--; break;
-                    case 'down': head.y++; break;
-                    case 'left': head.x--; break;
-                    case 'right': head.x++; break;
-                }
-                
-                // Check for collisions with walls
-                if (head.x < 0 || head.y < 0 || head.x >= boardSize || head.y >= boardSize) {
-                    gameOver();
+                if (!hasFlippedCard) {
+                    hasFlippedCard = true;
+                    firstCard = this;
                     return;
                 }
                 
-                // Check for collisions with self
-                if (snake.some(segment => segment.x === head.x && segment.y === head.y)) {
-                    gameOver();
-                    return;
-                }
+                secondCard = this;
+                checkForMatch();
+            }
+            
+            function checkForMatch() {
+                moves++;
+                memoryMoves.textContent = `Moves: ${moves}`;
                 
-                // Add new head
-                snake.unshift(head);
+                let isMatch = firstCard.getAttribute('data-symbol') === secondCard.getAttribute('data-symbol');
                 
-                // Check if food is eaten
-                if (head.x === food.x && head.y === food.y) {
-                    // Generate new food
-                    generateFood();
-                    // Increase score
-                    score += 10;
-                    scoreDisplay.textContent = score;
+                if (isMatch) {
+                    disableCards();
+                    pairs++;
+                    if (pairs === totalPairs) {
+                        setTimeout(() => {
+                            alert(`Congratulations! You completed the game in ${moves} moves!`);
+                        }, 500);
+                    }
                 } else {
-                    // Remove tail
+                    unflipCards();
+                }
+            }
+            
+            function disableCards() {
+                firstCard.removeEventListener('click', flipCard);
+                secondCard.removeEventListener('click', flipCard);
+                
+                resetBoard();
+            }
+            
+            function unflipCards() {
+                lockBoard = true;
+                
+                setTimeout(() => {
+                    firstCard.classList.remove('flipped');
+                    secondCard.classList.remove('flipped');
+                    
+                    resetBoard();
+                }, 1000);
+            }
+            
+            function resetBoard() {
+                [hasFlippedCard, lockBoard] = [false, false];
+                [firstCard, secondCard] = [null, null];
+            }
+        }
+        
+        // Snake Game Logic
+        let snakeInterval;
+        document.getElementById('start-snake').addEventListener('click', startSnakeGame);
+        
+        function startSnakeGame() {
+            if (snakeInterval) clearInterval(snakeInterval);
+            
+            const canvas = document.getElementById('snake-game');
+            const ctx = canvas.getContext('2d');
+            const scoreDisplay = document.getElementById('snake-score');
+            const box = 20;
+            let score = 0;
+            
+            let snake = [];
+            snake[0] = {x: 10 * box, y: 10 * box};
+            
+            let food = {
+                x: Math.floor(Math.random() * 20) * box,
+                y: Math.floor(Math.random() * 20) * box
+            };
+            
+            let d;
+            
+            document.addEventListener('keydown', direction);
+            
+            function direction(event) {
+                if (event.keyCode === 37 && d !== 'RIGHT') d = 'LEFT';
+                else if (event.keyCode === 38 && d !== 'DOWN') d = 'UP';
+                else if (event.keyCode === 39 && d !== 'LEFT') d = 'RIGHT';
+                else if (event.keyCode === 40 && d !== 'UP') d = 'DOWN';
+            }
+            
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                for(let i = 0; i < snake.length; i++) {
+                    ctx.fillStyle = (i === 0) ? '#4CAF50' : '#8BC34A';
+                    ctx.fillRect(snake[i].x, snake[i].y, box, box);
+                    
+                    ctx.strokeStyle = '#263238';
+                    ctx.strokeRect(snake[i].x, snake[i].y, box, box);
+                }
+                
+                ctx.fillStyle = '#FF5722';
+                ctx.fillRect(food.x, food.y, box, box);
+                
+                let snakeX = snake[0].x;
+                let snakeY = snake[0].y;
+                
+                if (d === 'LEFT') snakeX -= box;
+                if (d === 'UP') snakeY -= box;
+                if (d === 'RIGHT') snakeX += box;
+                if (d === 'DOWN') snakeY += box;
+                
+                if (snakeX === food.x && snakeY === food.y) {
+                    score++;
+                    scoreDisplay.textContent = `Score: ${score}`;
+                    food = {
+                        x: Math.floor(Math.random() * 20) * box,
+                        y: Math.floor(Math.random() * 20) * box
+                    };
+                } else {
                     snake.pop();
                 }
                 
-                drawGame();
-            }
-            
-            function generateFood() {
-                // Generate random position for food
-                let newFood;
-                do {
-                    newFood = {
-                        x: Math.floor(Math.random() * boardSize),
-                        y: Math.floor(Math.random() * boardSize)
-                    };
-                    // Make sure food doesn't appear on the snake
-                } while (snake.some(segment => segment.x === newFood.x && segment.y === newFood.y));
+                let newHead = {
+                    x: snakeX,
+                    y: snakeY
+                };
                 
-                food = newFood;
-            }
-            
-            function gameOver() {
-                isGameOver = true;
-                clearInterval(gameInterval);
-                alert(`Game Over! Your score: ${score}`);
-            }
-            
-            function startGame() {
-                // Reset game state
-                snake = [{x: 10, y: 10}];
-                direction = 'right';
-                nextDirection = 'right';
-                score = 0;
-                isGameOver = false;
-                scoreDisplay.textContent = '0';
-                
-                generateFood();
-                drawGame();
-                
-                // Clear previous interval if it exists
-                if (gameInterval) clearInterval(gameInterval);
-                
-                // Start game loop
-                gameInterval = setInterval(moveSnake, 150);
-            }
-            
-            // Event listeners
-            startButton.addEventListener('click', startGame);
-            
-            document.addEventListener('keydown', (e) => {
-                // Prevent default arrow key behavior to avoid page scrolling
-                if (e.key.includes('Arrow')) {
-                    e.preventDefault();
+                if (snakeX < 0 || snakeX >= canvas.width || snakeY < 0 || snakeY >= canvas.height || collision(newHead, snake)) {
+                    clearInterval(snakeInterval);
+                    alert(`Game Over! Your score: ${score}`);
+                    return;
                 }
                 
-                switch (e.key) {
-                    case 'ArrowUp':
-                        if (direction !== 'down') nextDirection = 'up';
-                        break;
-                    case 'ArrowDown':
-                        if (direction !== 'up') nextDirection = 'down';
-                        break;
-                    case 'ArrowLeft':
-                        if (direction !== 'right') nextDirection = 'left';
-                        break;
-                    case 'ArrowRight':
-                        if (direction !== 'left') nextDirection = 'right';
-                        break;
+                snake.unshift(newHead);
+            }
+            
+            function collision(head, array) {
+                for(let i = 0; i < array.length; i++) {
+                    if(head.x === array[i].x && head.y === array[i].y) {
+                        return true;
+                    }
                 }
-            });
+                return false;
+            }
+            
+            scoreDisplay.textContent = 'Score: 0';
+            score = 0;
+            snake = [];
+            snake[0] = {x: 10 * box, y: 10 * box};
+            d = undefined;
+            
+            snakeInterval = setInterval(draw, 100);
         }
         
-        // Tic Tac Toe
-        function initTicTacToe() {
-            const cells = document.querySelectorAll('.cell');
-            const status = document.getElementById('status');
-            const resetButton = document.getElementById('reset-ttt');
+        // Clicker Game Logic
+        let clickerInterval;
+        const clickerGame = document.getElementById('clicker-game');
+        const clickerScore = document.getElementById('clicker-score');
+        const clickerTimer = document.getElementById('clicker-timer');
+        const startClickerBtn = document.getElementById('start-clicker');
+        
+        startClickerBtn.addEventListener('click', startClickerGame);
+        
+        function startClickerGame() {
+            if (clickerInterval) clearInterval(clickerInterval);
             
+            let clicks = 0;
+            let timeLeft = 10;
+            
+            clickerScore.textContent = 'Clicks: 0';
+            clickerTimer.textContent = 'Time: 10s';
+            startClickerBtn.disabled = true;
+            startClickerBtn.classList.add('opacity-50');
+            
+            clickerGame.addEventListener('click', incrementClicks);
+            
+            function incrementClicks() {
+                clicks++;
+                clickerScore.textContent = `Clicks: ${clicks}`;
+            }
+            
+            clickerInterval = setInterval(() => {
+                timeLeft--;
+                clickerTimer.textContent = `Time: ${timeLeft}s`;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(clickerInterval);
+                    clickerGame.removeEventListener('click', incrementClicks);
+                    setTimeout(() => {
+                        alert(`Time's up! You made ${clicks} clicks in 10 seconds!`);
+                        startClickerBtn.disabled = false;
+                        startClickerBtn.classList.remove('opacity-50');
+                    }, 100);
+                }
+            }, 1000);
+        }
+        
+        // Color Match Game Logic
+        let colorInterval;
+        const colorBoard = document.getElementById('color-board');
+        const colorScore = document.getElementById('color-score');
+        const colorTimer = document.getElementById('color-timer');
+        const startColorBtn = document.getElementById('start-color');
+        
+        startColorBtn.addEventListener('click', startColorGame);
+        
+        function startColorGame() {
+            if (colorInterval) clearInterval(colorInterval);
+            
+            let score = 0;
+            let timeLeft = 30;
+            
+            colorScore.textContent = 'Score: 0';
+            colorTimer.textContent = 'Time: 30s';
+            startColorBtn.disabled = true;
+            startColorBtn.classList.add('opacity-50');
+            
+            createColorBoard();
+            
+            function createColorBoard() {
+                colorBoard.innerHTML = '';
+                
+                // Determine grid size based on score
+                let gridSize = 2 + Math.min(Math.floor(score / 5), 4);
+                let tiles = gridSize * gridSize;
+                
+                // Generate random colors
+                let r = Math.floor(Math.random() * 256);
+                let g = Math.floor(Math.random() * 256);
+                let b = Math.floor(Math.random() * 256);
+                
+                // Determine the different tile
+                let differentTile = Math.floor(Math.random() * tiles);
+                
+                // Determine color difference (gets harder as score increases)
+                let difference = Math.max(30 - score, 5);
+                
+                // Create different color
+                let dr = Math.min(Math.max(r + (Math.random() > 0.5 ? 1 : -1) * difference, 0), 255);
+                let dg = Math.min(Math.max(g + (Math.random() > 0.5 ? 1 : -1) * difference, 0), 255);
+                let db = Math.min(Math.max(b + (Math.random() > 0.5 ? 1 : -1) * difference, 0), 255);
+                
+                // Create tiles
+                for (let i = 0; i < tiles; i++) {
+                    const tile = document.createElement('div');
+                    tile.className = 'color-tile';
+                    
+                    if (i === differentTile) {
+                        tile.style.backgroundColor = `rgb(${dr}, ${dg}, ${db})`;
+                        tile.dataset.correct = 'true';
+                    } else {
+                        tile.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+                        tile.dataset.correct = 'false';
+                    }
+                    
+                    tile.addEventListener('click', checkTile);
+                    colorBoard.appendChild(tile);
+                }
+                
+                // Adjust width of board for larger grids
+                colorBoard.style.maxWidth = `${gridSize * 90}px`;
+            }
+            
+            function checkTile() {
+                if (this.dataset.correct === 'true') {
+                    score++;
+                    colorScore.textContent = `Score: ${score}`;
+                    createColorBoard();
+                } else {
+                    // Wrong choice - small penalty
+                    timeLeft = Math.max(timeLeft - 2, 0);
+                    colorTimer.textContent = `Time: ${timeLeft}s`;
+                }
+            }
+            
+            colorInterval = setInterval(() => {
+                timeLeft--;
+                colorTimer.textContent = `Time: ${timeLeft}s`;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(colorInterval);
+                    setTimeout(() => {
+                        alert(`Time's up! Your final score: ${score}`);
+                        startColorBtn.disabled = false;
+                        startColorBtn.classList.remove('opacity-50');
+                    }, 100);
+                }
+            }, 1000);
+        }
+        
+        // Tic Tac Toe Game Logic
+        function setupTicTacToe() {
+            const statusDisplay = document.getElementById('ttt-status');
+            const cells = document.querySelectorAll('.ttt-cell');
+            const restartButton = document.getElementById('restart-ttt');
+            
+            let gameActive = true;
             let currentPlayer = 'X';
             let gameState = ['', '', '', '', '', '', '', '', ''];
-            let gameActive = true;
             
             const winningConditions = [
-                [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
-                [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
-                [0, 4, 8], [2, 4, 6]             // diagonals
+                [0, 1, 2],
+                [3, 4, 5],
+                [6, 7, 8],
+                [0, 3, 6],
+                [1, 4, 7],
+                [2, 5, 8],
+                [0, 4, 8],
+                [2, 4, 6]
             ];
             
-            function handleCellClick(e) {
-                const clickedCell = e.target;
-                const clickedCellIndex = parseInt(clickedCell.getAttribute('data-index'));
+            function handleCellClick(clickedCellEvent) {
+                const clickedCell = clickedCellEvent.target;
+                const clickedCellIndex = parseInt(clickedCell.getAttribute('data-cell-index'));
                 
                 if (gameState[clickedCellIndex] !== '' || !gameActive) {
                     return;
                 }
                 
-                gameState[clickedCellIndex] = currentPlayer;
-                clickedCell.textContent = currentPlayer;
+                handleCellPlayed(clickedCell, clickedCellIndex);
+                handleResultValidation();
                 
-                checkResult();
+                if (gameActive && currentPlayer === 'O') {
+                    // AI move
+                    setTimeout(makeAIMove, 500);
+                }
             }
             
-            function checkResult() {
+            function handleCellPlayed(clickedCell, clickedCellIndex) {
+                gameState[clickedCellIndex] = currentPlayer;
+                clickedCell.innerHTML = currentPlayer === 'X' ? '<span class="ttt-x">X</span>' : '<span class="ttt-o">O</span>';
+            }
+            
+            function handleResultValidation() {
                 let roundWon = false;
-                
                 for (let i = 0; i < winningConditions.length; i++) {
                     const [a, b, c] = winningConditions[i];
+                    const position1 = gameState[a];
+                    const position2 = gameState[b];
+                    const position3 = gameState[c];
                     
-                    if (gameState[a] === '' || gameState[b] === '' || gameState[c] === '') {
+                    if (position1 === '' || position2 === '' || position3 === '') {
                         continue;
                     }
                     
-                    if (gameState[a] === gameState[b] && gameState[b] === gameState[c]) {
+                    if (position1 === position2 && position2 === position3) {
                         roundWon = true;
                         break;
                     }
                 }
                 
                 if (roundWon) {
-                    status.textContent = `Player ${currentPlayer} wins!`;
+                    statusDisplay.innerHTML = `Player ${currentPlayer} wins!`;
                     gameActive = false;
                     return;
                 }
                 
-                if (!gameState.includes('')) {
-                    status.textContent = "Game ended in a draw!";
+                const roundDraw = !gameState.includes('');
+                if (roundDraw) {
+                    statusDisplay.innerHTML = 'Game ended in a draw!';
                     gameActive = false;
                     return;
                 }
                 
                 currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-                status.textContent = `Player ${currentPlayer}'s turn`;
+                statusDisplay.innerHTML = `Player ${currentPlayer}'s turn`;
             }
             
-            function resetGame() {
-                currentPlayer = 'X';
-                gameState = ['', '', '', '', '', '', '', '', ''];
-                gameActive = true;
-                status.textContent = `Player ${currentPlayer}'s turn`;
+            function makeAIMove() {
+                if (!gameActive) return;
                 
-                cells.forEach(cell => {
-                    cell.textContent = '';
-                });
-            }
-            
-            // Event listeners
-            cells.forEach(cell => {
-                cell.addEventListener('click', handleCellClick);
-            });
-            
-            resetButton.addEventListener('click', resetGame);
-        }
-        
-        // Memory Match Game
-        function initMemoryGame() {
-            const memoryGame = document.getElementById('memory-game');
-            const resetButton = document.getElementById('reset-memory');
-            const movesDisplay = document.getElementById('moves');
-            
-            const symbols = ['🌟', '🍎', '🌈', '🚀', '🎮', '🐱', '🌺', '💻'];
-            let cards = [...symbols, ...symbols];
-            let moves = 0;
-            let flippedCards = [];
-            let matchedPairs = 0;
-            let isProcessing = false;
-            
-            function shuffleCards() {
-                for (let i = cards.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [cards[i], cards[j]] = [cards[j], cards[i]];
+                // Check if AI can win
+                for (let i = 0; i < gameState.length; i++) {
+                    if (gameState[i] === '') {
+                        gameState[i] = 'O';
+                        if (checkWinningMove()) {
+                            const cell = document.querySelector(`[data-cell-index="${i}"]`);
+                            cell.innerHTML = '<span class="ttt-o">O</span>';
+                            handleResultValidation();
+                            return;
+                        }
+                        gameState[i] = '';
+                    }
                 }
-            }
-            
-            function createBoard() {
-                memoryGame.innerHTML = '';
-                shuffleCards();
-                matchedPairs = 0;
-                moves = 0;
-                movesDisplay.textContent = moves;
                 
-                cards.forEach((symbol, index) => {
-                    const card = document.createElement('div');
-                    card.classList.add('memory-card');
-                    card.dataset.index = index;
-                    
-                    const frontFace = document.createElement('div');
-                    frontFace.classList.add('front-face');
-                    frontFace.textContent = symbol;
-                    
-                    const backFace = document.createElement('div');
-                    backFace.classList.add('back-face');
-                    
-                    card.appendChild(frontFace);
-                    card.appendChild(backFace);
-                    
-                    card.addEventListener('click', flipCard);
-                    memoryGame.appendChild(card);
-                });
-            }
-            
-            function flipCard() {
-                if (isProcessing) return;
+                // Check if player can win and block
+                for (let i = 0; i < gameState.length; i++) {
+                    if (gameState[i] === '') {
+                        gameState[i] = 'X';
+                        if (checkWinningMove()) {
+                            gameState[i] = 'O';
+                            const cell = document.querySelector(`[data-cell-index="${i}"]`);
+                            cell.innerHTML = '<span class="ttt-o">O</span>';
+                            handleResultValidation();
+                            return;
+                        }
+                        gameState[i] = '';
+                    }
+                }
                 
-                const selectedCard = this;
-                const cardIndex = selectedCard.dataset.index;
-                
-                // Prevent clicking on the same card or already matched cards
-                if (selectedCard.classList.contains('flip') || flippedCards.includes(cardIndex)) {
+                // Take center if available
+                if (gameState[4] === '') {
+                    gameState[4] = 'O';
+                    const cell = document.querySelector('[data-cell-index="4"]');
+                    cell.innerHTML = '<span class="ttt-o">O</span>';
+                    handleResultValidation();
                     return;
                 }
                 
-                // Flip the card
-                selectedCard.classList.add('flip');
-                flippedCards.push(cardIndex);
-                
-                // If we flipped two cards
-                if (flippedCards.length === 2) {
-                    isProcessing = true;
-                    moves++;
-                    movesDisplay.textContent = moves;
-                    
-                    const firstCardIndex = flippedCards[0];
-                    const secondCardIndex = flippedCards[1];
-                    
-                    // Check if they match
-                    if (cards[firstCardIndex] === cards[secondCardIndex]) {
-                        // Cards match
-                        flippedCards = [];
-                        matchedPairs++;
-                        
-                        if (matchedPairs === symbols.length) {
-                            setTimeout(() => {
-                                alert(`Congratulations! You completed the game in ${moves} moves.`);
-                            }, 500);
-                        }
-                        
-                        isProcessing = false;
-                    } else {
-                        // Cards don't match, flip them back
-                        setTimeout(() => {
-                            const firstCard = document.querySelector(`.memory-card[data-index="${firstCardIndex}"]`);
-                            const secondCard = document.querySelector(`.memory-card[data-index="${secondCardIndex}"]`);
-                            
-                            firstCard.classList.remove('flip');
-                            secondCard.classList.remove('flip');
-                            
-                            flippedCards = [];
-                            isProcessing = false;
-                        }, 1000);
+                // Take a random available cell
+                const availableMoves = [];
+                for (let i = 0; i < gameState.length; i++) {
+                    if (gameState[i] === '') {
+                        availableMoves.push(i);
                     }
+                }
+                
+                if (availableMoves.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * availableMoves.length);
+                    const cellIndex = availableMoves[randomIndex];
+                    gameState[cellIndex] = 'O';
+                    const cell = document.querySelector(`[data-cell-index="${cellIndex}"]`);
+                    cell.innerHTML = '<span class="ttt-o">O</span>';
+                    handleResultValidation();
                 }
             }
             
-            // Event listeners
-            resetButton.addEventListener('click', createBoard);
+            function checkWinningMove() {
+                for (let i = 0; i < winningConditions.length; i++) {
+                    const [a, b, c] = winningConditions[i];
+                    const position1 = gameState[a];
+                    const position2 = gameState[b];
+                    const position3 = gameState[c];
+                    
+                    if (position1 !== '' && position1 === position2 && position2 === position3) {
+                        return true;
+                    }
+                }
+                return false;
+            }
             
-            // Initialize the game
-            createBoard();
+            function restartGame() {
+                gameActive = true;
+                currentPlayer = 'X';
+                gameState = ['', '', '', '', '', '', '', '', ''];
+                statusDisplay.innerHTML = `Player X's turn`;
+                cells.forEach(cell => {
+                    cell.innerHTML = '';
+                });
+            }
+            
+            cells.forEach(cell => cell.addEventListener('click', handleCellClick));
+            restartButton.addEventListener('click', restartGame);
+            
+            // Initialize game
+            restartGame();
         }
         
-        // 2048 Game
-        function init2048Game() {
-            const gridContainer = document.querySelector('.grid-2048');
-            const scoreDisplay = document.getElementById('score-2048');
-            const resetButton = document.getElementById('reset-2048');
+        // Hummingbird Game Logic
+        let hummingbirdInterval;
+        document.getElementById('start-hummingbird').addEventListener('click', startHummingbirdGame);
+        
+        function startHummingbirdGame() {
+            if (hummingbirdInterval) clearInterval(hummingbirdInterval);
             
-            let grid = [];
+            const canvas = document.getElementById('hummingbird-game');
+            const ctx = canvas.getContext('2d');
+            const scoreDisplay = document.getElementById('hummingbird-score');
+            
+            // Game variables
             let score = 0;
+            let speed = 2;
+            const gravity = 0.2;
             
-            function createGrid() {
-                // Clear existing grid
-                gridContainer.innerHTML = '';
+            // Hummingbird
+            const bird = {
+                x: 50,
+                y: canvas.height / 2,
+                width: 30,
+                height: 20,
+                velocity: 0,
+                lift: -4,
+                draw: function() {
+                    ctx.fillStyle = '#9C27B0';
+                    ctx.beginPath();
+                    ctx.ellipse(this.x, this.y, this.width / 2, this.height / 2, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Wings
+                    ctx.fillStyle = '#E1BEE7';
+                    ctx.beginPath();
+                    ctx.ellipse(this.x - 10, this.y, 15, 5, Math.PI / 4, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Beak
+                    ctx.fillStyle = '#FF5722';
+                    ctx.beginPath();
+                    ctx.moveTo(this.x + 15, this.y);
+                    ctx.lineTo(this.x + 25, this.y);
+                    ctx.lineTo(this.x + 15, this.y + 3);
+                    ctx.fill();
+                },
+                update: function() {
+                    this.velocity += gravity;
+                    this.y += this.velocity;
+                    
+                    if (this.y > canvas.height - this.height / 2) {
+                        this.y = canvas.height - this.height / 2;
+                        this.velocity = 0;
+                    }
+                    
+                    if (this.y < this.height / 2) {
+                        this.y = this.height / 2;
+                        this.velocity = 0;
+                    }
+                },
+                flap: function() {
+                    this.velocity += this.lift;
+                }
+            };
+            
+            // Flowers (nectar)
+            const flowers = [];
+            
+            function addFlower() {
+                const flowerColors = ['#FF4081', '#8BC34A', '#FFC107', '#03A9F4'];
+                const flowerTypes = ['circle', 'square', 'triangle'];
                 
-                // Create a 4x4 grid
-                for (let i = 0; i < 4; i++) {
-                    grid[i] = [];
-                    for (let j = 0; j < 4; j++) {
-                        grid[i][j] = 0;
+                const flower = {
+                    x: canvas.width,
+                    y: Math.random() * (canvas.height - 50) + 25,
+                    width: Math.random() * 15 + 20,
+                    height: Math.random() * 15 + 20,
+                    color: flowerColors[Math.floor(Math.random() * flowerColors.length)],
+                    type: flowerTypes[Math.floor(Math.random() * flowerTypes.length)],
+                    collected: false,
+                    draw: function() {
+                        if (this.collected) return;
                         
-                        const cell = document.createElement('div');
-                        cell.classList.add('grid-cell');
-                        cell.dataset.row = i;
-                        cell.dataset.col = j;
-                        gridContainer.appendChild(cell);
-                    }
-                }
-            }
-            
-            function updateGrid() {
-                // Update the visual representation of the grid
-                const cells = document.querySelectorAll('.grid-cell');
-                cells.forEach(cell => {
-                    const row = parseInt(cell.dataset.row);
-                    const col = parseInt(cell.dataset.col);
-                    const value = grid[row][col];
-                    
-                    // Clear the cell
-                    cell.innerHTML = '';
-                    
-                    if (value > 0) {
-                        const tile = document.createElement('div');
-                        tile.classList.add('tile', `tile-${value}`);
-                        tile.textContent = value;
-                        cell.appendChild(tile);
-                    }
-                });
-                
-                // Update score
-                scoreDisplay.textContent = score;
-            }
-            
-            function addRandomTile() {
-                // Find all empty cells
-                const emptyCells = [];
-                for (let i = 0; i < 4; i++) {
-                    for (let j = 0; j < 4; j++) {
-                        if (grid[i][j] === 0) {
-                            emptyCells.push({row: i, col: j});
+                        ctx.fillStyle = this.color;
+                        
+                        if (this.type === 'circle') {
+                            ctx.beginPath();
+                            ctx.arc(this.x, this.y, this.width / 2, 0, Math.PI * 2);
+                            ctx.fill();
+                            
+                            // Nectar center
+                            ctx.fillStyle = '#FFEB3B';
+                            ctx.beginPath();
+                            ctx.arc(this.x, this.y, this.width / 6, 0, Math.PI * 2);
+                            ctx.fill();
+                        } else if (this.type === 'square') {
+                            ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+                            
+                            // Nectar center
+                            ctx.fillStyle = '#FFEB3B';
+                            ctx.fillRect(this.x - this.width / 6, this.y - this.height / 6, this.width / 3, this.height / 3);
+                        } else if (this.type === 'triangle') {
+                            ctx.beginPath();
+                            ctx.moveTo(this.x, this.y - this.height / 2);
+                            ctx.lineTo(this.x + this.width / 2, this.y + this.height / 2);
+                            ctx.lineTo(this.x - this.width / 2, this.y + this.height / 2);
+                            ctx.closePath();
+                            ctx.fill();
+                            
+                            // Nectar center
+                            ctx.fillStyle = '#FFEB3B';
+                            ctx.beginPath();
+                            ctx.arc(this.x, this.y, this.width / 6, 0, Math.PI * 2);
+                            ctx.fill();
                         }
+                    },
+                    update: function() {
+                        this.x -= speed;
+                    },
+                    checkCollision: function() {
+                        if (this.collected) return false;
+                        
+                        const dx = Math.abs(bird.x - this.x);
+                        const dy = Math.abs(bird.y - this.y);
+                        
+                        if (dx < (bird.width / 2 + this.width / 2) * 0.8 && 
+                            dy < (bird.height / 2 + this.height / 2) * 0.8) {
+                            this.collected = true;
+                            score++;
+                            scoreDisplay.textContent = `Score: ${score}`;
+                            
+                            if (score % 5 === 0) {
+                                speed += 0.5;
+                            }
+                            
+                            return true;
+                        }
+                        
+                        return false;
                     }
-                }
+                };
                 
-                if (emptyCells.length === 0) return;
-                
-                // Pick a random empty cell
-                const randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-                
-                // Add a 2 or 4 (90% chance for 2, 10% chance for 4)
-                grid[randomCell.row][randomCell.col] = Math.random() < 0.9 ? 2 : 4;
+                flowers.push(flower);
             }
             
-            function moveLeft() {
-                let moved = false;
+            // Obstacles
+            const obstacles = [];
+            
+            function addObstacle() {
+                const height = Math.random() * 150 + 50;
+                const y = Math.random() > 0.5 ? 0 : canvas.height - height;
                 
-                for (let i = 0; i < 4; i++) {
-                    const row = grid[i].filter(val => val !== 0);
-                    let newRow = [];
-                    
-                    // Merge adjacent identical numbers
-                    for (let j = 0; j < row.length; j++) {
-                        if (j < row.length - 1 && row[j] === row[j + 1]) {
-                            newRow.push(row[j] * 2);
-                            score += row[j] * 2;
-                            j++;
-                            moved = true;
+                const obstacle = {
+                    x: canvas.width,
+                    y: y,
+                    width: 30,
+                    height: height,
+                    passed: false,
+                    draw: function() {
+                        ctx.fillStyle = '#795548';
+                        ctx.fillRect(this.x, this.y, this.width, this.height);
+                        
+                        // Branch details
+                        ctx.fillStyle = '#5D4037';
+                        if (this.y === 0) {
+                            // Bottom branches for top obstacles
+                            for (let i = 0; i < 3; i++) {
+                                const branchY = this.height - 30 - i * 40;
+                                if (branchY > 10) {
+                                    ctx.fillRect(this.x - 20, branchY, 20, 10);
+                                }
+                            }
                         } else {
-                            newRow.push(row[j]);
+                            // Top branches for bottom obstacles
+                            for (let i = 0; i < 3; i++) {
+                                const branchY = this.y + 20 + i * 40;
+                                if (branchY < this.y + this.height - 10) {
+                                    ctx.fillRect(this.x - 20, branchY, 20, 10);
+                                }
+                            }
                         }
-                    }
-                    
-                    // Pad with zeros
-                    while (newRow.length < 4) {
-                        newRow.push(0);
-                    }
-                    
-                    // Check if the row has changed
-                    if (grid[i].join(',') !== newRow.join(',')) {
-                        moved = true;
-                    }
-                    
-                    grid[i] = newRow;
-                }
-                
-                return moved;
-            }
-            
-            function moveRight() {
-                let moved = false;
-                
-                for (let i = 0; i < 4; i++) {
-                    const row = grid[i].filter(val => val !== 0);
-                    let newRow = [];
-                    
-                    // Merge adjacent identical numbers (from right to left)
-                    for (let j = row.length - 1; j >= 0; j--) {
-                        if (j > 0 && row[j] === row[j - 1]) {
-                            newRow.unshift(row[j] * 2);
-                            score += row[j] * 2;
-                            j--;
-                            moved = true;
-                        } else {
-                            newRow.unshift(row[j]);
-                        }
-                    }
-                    
-                    // Pad with zeros
-                    while (newRow.length < 4) {
-                        newRow.unshift(0);
-                    }
-                    
-                    // Check if the row has changed
-                    if (grid[i].join(',') !== newRow.join(',')) {
-                        moved = true;
-                    }
-                    
-                    grid[i] = newRow;
-                }
-                
-                return moved;
-            }
-            
-            function moveUp() {
-                let moved = false;
-                
-                for (let j = 0; j < 4; j++) {
-                    // Extract column
-                    let column = [];
-                    for (let i = 0; i < 4; i++) {
-                        column.push(grid[i][j]);
-                    }
-                    
-                    // Filter out zeros
-                    column = column.filter(val => val !== 0);
-                    
-                    // Merge adjacent identical numbers
-                    let newColumn = [];
-                    for (let i = 0; i < column.length; i++) {
-                        if (i < column.length - 1 && column[i] === column[i + 1]) {
-                            newColumn.push(column[i] * 2);
-                            score += column[i] * 2;
-                            i++;
-                            moved = true;
-                        } else {
-                            newColumn.push(column[i]);
-                        }
-                    }
-                    
-                    // Pad with zeros
-                    while (newColumn.length < 4) {
-                        newColumn.push(0);
-                    }
-                    
-                    // Update the grid column
-                    for (let i = 0; i < 4; i++) {
-                        if (grid[i][j] !== newColumn[i]) {
-                            moved = true;
-                        }
-                        grid[i][j] = newColumn[i];
-                    }
-                }
-                
-                return moved;
-            }
-            
-            function moveDown() {
-                let moved = false;
-                
-                for (let j = 0; j < 4; j++) {
-                    // Extract column
-                    let column = [];
-                    for (let i = 0; i < 4; i++) {
-                        column.push(grid[i][j]);
-                    }
-                    
-                    // Filter out zeros
-                    column = column.filter(val => val !== 0);
-                    
-                    // Merge adjacent identical numbers (from bottom to top)
-                    let newColumn = [];
-                    for (let i = column.length - 1; i >= 0; i--) {
-                        if (i > 0 && column[i] === column[i - 1]) {
-                            newColumn.unshift(column[i] * 2);
-                            score += column[i] * 2;
-                            i--;
-                            moved = true;
-                        } else {
-                            newColumn.unshift(column[i]);
-                        }
-                    }
-                    
-                    // Pad with zeros
-                    while (newColumn.length < 4) {
-                        newColumn.unshift(0);
-                    }
-                    
-                    // Update the grid column
-                    for (let i = 0; i < 4; i++) {
-                        if (grid[i][j] !== newColumn[i]) {
-                            moved = true;
-                        }
-                        grid[i][j] = newColumn[i];
-                    }
-                }
-                
-                return moved;
-            }
-            
-            function checkGameOver() {
-                // Check if there are any empty cells
-                for (let i = 0; i < 4; i++) {
-                    for (let j = 0; j < 4; j++) {
-                        if (grid[i][j] === 0) {
+                    },
+                    update: function() {
+                        this.x -= speed;
+                    },
+                    checkCollision: function() {
+                        const dx = Math.abs(bird.x - (this.x + this.width / 2));
+                        const dy = Math.abs(bird.y - (this.y + this.height / 2));
+                        
+                        // Bird is to the right of obstacle
+                        if (bird.x > this.x + this.width) {
+                            if (!this.passed) {
+                                this.passed = true;
+                            }
                             return false;
                         }
-                    }
-                }
-                
-                // Check if any adjacent cells have the same value
-                for (let i = 0; i < 4; i++) {
-                    for (let j = 0; j < 4; j++) {
-                        // Check right
-                        if (j < 3 && grid[i][j] === grid[i][j + 1]) {
-                            return false;
+                        
+                        if (dx < (bird.width / 2 + this.width / 2) && 
+                            dy < (bird.height / 2 + this.height / 2)) {
+                            return true;
                         }
-                        // Check down
-                        if (i < 3 && grid[i][j] === grid[i + 1][j]) {
-                            return false;
-                        }
+                        
+                        return false;
                     }
-                }
+                };
                 
-                return true;
+                obstacles.push(obstacle);
             }
             
-            function handleKeyDown(e) {
-                let moved = false;
-                
-                switch (e.key) {
-                    case 'ArrowLeft':
-                        e.preventDefault();
-                        moved = moveLeft();
-                        break;
-                    case 'ArrowRight':
-                        e.preventDefault();
-                        moved = moveRight();
-                        break;
-                    case 'ArrowUp':
-                        e.preventDefault();
-                        moved = moveUp();
-                        break;
-                    case 'ArrowDown':
-                        e.preventDefault();
-                        moved = moveDown();
-                        break;
+            // Controls
+            document.addEventListener('keydown', function(event) {
+                if (event.code === 'ArrowUp' || event.code === 'Space') {
+                    bird.flap();
                 }
+            });
+            
+            canvas.addEventListener('click', function() {
+                bird.flap();
+            });
+            
+            // Game loop
+            function draw() {
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
                 
-                if (moved) {
-                    addRandomTile();
-                    updateGrid();
+                // Draw background
+                ctx.fillStyle = '#87CEEB';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Clouds
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(100, 50, 30, 0, Math.PI * 2);
+                ctx.arc(130, 40, 25, 0, Math.PI * 2);
+                ctx.arc(160, 55, 20, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.beginPath();
+                ctx.arc(400, 80, 25, 0, Math.PI * 2);
+                ctx.arc(430, 70, 20, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Update and draw flowers
+                for (let i = flowers.length - 1; i >= 0; i--) {
+                    flowers[i].update();
+                    flowers[i].draw();
+                    flowers[i].checkCollision();
                     
-                    if (checkGameOver()) {
-                        alert(`Game Over! Your score: ${score}`);
+                    if (flowers[i].x + flowers[i].width < 0) {
+                        flowers.splice(i, 1);
                     }
+                }
+                
+                // Add new flowers randomly
+                if (Math.random() < 0.02) {
+                    addFlower();
+                }
+                
+                // Update and draw obstacles
+                let gameOver = false;
+                for (let i = obstacles.length - 1; i >= 0; i--) {
+                    obstacles[i].update();
+                    obstacles[i].draw();
+                    
+                    if (obstacles[i].checkCollision()) {
+                        gameOver = true;
+                    }
+                    
+                    if (obstacles[i].x + obstacles[i].width < 0) {
+                        obstacles.splice(i, 1);
+                    }
+                }
+                
+                // Add new obstacles randomly
+                if (Math.random() < 0.005) {
+                    addObstacle();
+                }
+                
+                // Update and draw bird
+                bird.update();
+                bird.draw();
+                
+                // Game over check
+                if (gameOver) {
+                    clearInterval(hummingbirdInterval);
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    
+                    ctx.fillStyle = 'white';
+                    ctx.font = '30px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Game Over!', canvas.width / 2, canvas.height / 2 - 20);
+                    ctx.fillText(`Score: ${score}`, canvas.width / 2, canvas.height / 2 + 20);
+                    
+                    document.getElementById('start-hummingbird').disabled = false;
+                    document.getElementById('start-hummingbird').classList.remove('opacity-50');
                 }
             }
             
-            function startNewGame() {
-                grid = Array(4).fill().map(() => Array(4).fill(0));
-                score = 0;
+            // Initialize
+            score = 0;
+            speed = 2;
+            flowers.length = 0;
+            obstacles.length = 0;
+            bird.y = canvas.height / 2;
+            bird.velocity = 0;
+            
+            scoreDisplay.textContent = 'Score: 0';
+            document.getElementById('start-hummingbird').disabled = true;
+            document.getElementById('start-hummingbird').classList.add('opacity-50');
+            
+            hummingbirdInterval = setInterval(draw, 20);
+        }
+        
+        // Flappy Bird Game Logic
+        let flappyInterval;
+        document.getElementById('start-flappy').addEventListener('click', startFlappyGame);
+        
+        function startFlappyGame() {
+            if (flappyInterval) clearInterval(flappyInterval);
+            
+            const canvas = document.getElementById('flappy-game');
+            const ctx = canvas.getContext('2d');
+            const scoreDisplay = document.getElementById('flappy-score');
+            
+            // Game variables
+            let score = 0;
+            let frames = 0;
+            const gravity = 0.25;
+            const jumpStrength = -4.6;
+            
+            // Bird object
+            const bird = {
+                x: 50,
+                y: 150,
+                width: 34,
+                height: 24,
+                radius: 12,
+                frame: 0,
+                speed: 0,
+                draw: function() {
+                    ctx.fillStyle = '#FFD600';
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Bird's eye
+                    ctx.fillStyle = 'black';
+                    ctx.beginPath();
+                    ctx.arc(this.x + 10, this.y - 5, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Bird's beak
+                    ctx.fillStyle = '#FF6D00';
+                    ctx.beginPath();
+                    ctx.moveTo(this.x + 12, this.y);
+                    ctx.lineTo(this.x + 20, this.y);
+                    ctx.lineTo(this.x + 12, this.y + 5);
+                    ctx.fill();
+                    
+                    // Bird's wing
+                    ctx.fillStyle = '#FFA000';
+                    // Animate wing flap
+                    if (frames % 10 < 5) {
+                        ctx.fillRect(this.x - 10, this.y - 5, 10, 3);
+                    } else {
+                        ctx.fillRect(this.x - 10, this.y, 10, 3);
+                    }
+                },
+                update: function() {
+                    // Apply gravity
+                    this.speed += gravity;
+                    this.y += this.speed;
+                    
+                    // Floor collision
+                    if (this.y + this.radius >= canvas.height - foreground.height) {
+                        this.y = canvas.height - foreground.height - this.radius;
+                        this.speed = 0;
+                        return true; // Game over
+                    }
+                    
+                    // Ceiling collision
+                    if (this.y - this.radius <= 0) {
+                        this.y = this.radius;
+                        this.speed = 0;
+                    }
+                    
+                    return false;
+                },
+                flap: function() {
+                    this.speed = jumpStrength;
+                }
+            };
+            
+            // Pipes
+            const pipes = {
+                position: [],
+                top: {
+                    sX: 0,
+                    sY: 0
+                },
+                bottom: {
+                    sX: 0,
+                    sY: 0
+                },
+                width: 52,
+                height: 320,
+                gap: 100,
+                maxYPos: -120,
                 
-                createGrid();
-                addRandomTile();
-                addRandomTile();
-                updateGrid();
+                draw: function() {
+                    for (let i = 0; i < this.position.length; i++) {
+                        let p = this.position[i];
+                        
+                        // Top pipe
+                        ctx.fillStyle = '#4CAF50';
+                        ctx.fillRect(p.x, p.y, this.width, this.height);
+                        
+                        // Bottom pipe
+                        ctx.fillRect(p.x, p.y + this.height + this.gap, this.width, this.height);
+                        
+                        // Pipe cap (top)
+                        ctx.fillStyle = '#388E3C';
+                        ctx.fillRect(p.x - 2, p.y, this.width + 4, 20);
+                        
+                        // Pipe cap (bottom)
+                        ctx.fillRect(p.x - 2, p.y + this.height + this.gap, this.width + 4, 20);
+                    }
+                },
+                update: function() {
+                    // Add new pipe every 100 frames
+                    if (frames % 100 === 0) {
+                        this.position.push({
+                            x: canvas.width,
+                            y: this.maxYPos * (Math.random() + 1)
+                        });
+                    }
+                    
+                    for (let i = 0; i < this.position.length; i++) {
+                        // Move pipes left
+                        let p = this.position[i];
+                        p.x -= 2;
+                        
+                        // Remove pipes off screen
+                        if (p.x + this.width <= 0) {
+                            this.position.shift();
+                            score++;
+                            scoreDisplay.textContent = `Score: ${score}`;
+                        }
+                        
+                        // Collision detection
+                        if (
+                            bird.x + bird.radius > p.x && 
+                            bird.x - bird.radius < p.x + this.width && 
+                            (
+                                bird.y - bird.radius < p.y + this.height || 
+                                bird.y + bird.radius > p.y + this.height + this.gap
+                            )
+                        ) {
+                            return true; // Game over
+                        }
+                    }
+                    return false;
+                }
+            };
+            
+            // Foreground
+            const foreground = {
+                x: 0,
+                y: canvas.height - 80,
+                width: canvas.width,
+                height: 80,
+                
+                draw: function() {
+                    ctx.fillStyle = '#8D6E63';
+                    ctx.fillRect(0, this.y, this.width, this.height);
+                    
+                    // Grass
+                    ctx.fillStyle = '#66BB6A';
+                    ctx.fillRect(0, this.y, this.width, 10);
+                },
+                
+                update: function() {
+                    // Animate foreground
+                    this.x = (this.x - 2) % 14;
+                }
+            };
+            
+            // Background
+            function drawBackground() {
+                // Sky
+                ctx.fillStyle = '#87CEEB';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Clouds
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(100, 70, 20, 0, Math.PI * 2);
+                ctx.arc(130, 60, 25, 0, Math.PI * 2);
+                ctx.arc(160, 75, 15, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.beginPath();
+                ctx.arc(250, 40, 25, 0, Math.PI * 2);
+                ctx.arc(280, 30, 20, 0, Math.PI * 2);
+                ctx.fill();
             }
             
-            // Event listeners
-            document.addEventListener('keydown', handleKeyDown);
-            resetButton.addEventListener('click', startNewGame);
+            // Controls
+            document.addEventListener('keydown', function(event) {
+                if (event.code === 'Space') {
+                    bird.flap();
+                }
+            });
             
-            // Initialize the game
-            startNewGame();
+            canvas.addEventListener('click', function() {
+                bird.flap();
+            });
+            
+            // Game loop
+            function draw() {
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw background
+                drawBackground();
+                
+                // Draw pipes
+                pipes.draw();
+                
+                // Draw bird
+                bird.draw();
+                
+                // Draw foreground
+                foreground.draw();
+                
+                frames++;
+            }
+            
+            function update() {
+                let gameOver = false;
+                
+                // Update bird
+                gameOver = bird.update();
+                
+                // Update pipes
+                if (pipes.update()) {
+                    gameOver = true;
+                }
+                
+                // Update foreground
+                foreground.update();
+                
+                if (gameOver) {
+                    endGame();
+                }
+            }
+            
+            function endGame() {
+                clearInterval(flappyInterval);
+                
+                // Game over display
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.fillStyle = 'white';
+                ctx.font = '28px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Game Over!', canvas.width / 2, canvas.height / 2 - 30);
+                ctx.fillText(`Score: ${score}`, canvas.width / 2, canvas.height / 2 + 10);
+                
+                document.getElementById('start-flappy').disabled = false;
+                document.getElementById('start-flappy').classList.remove('opacity-50');
+            }
+            
+            function gameLoop() {
+                update();
+                draw();
+            }
+            
+            // Initialize
+            score = 0;
+            frames = 0;
+            pipes.position = [];
+            bird.y = 150;
+            bird.speed = 0;
+            
+            scoreDisplay.textContent = 'Score: 0';
+            document.getElementById('start-flappy').disabled = true;
+            document.getElementById('start-flappy').classList.add('opacity-50');
+            
+            flappyInterval = setInterval(gameLoop, 20);
+        }
+        
+        // Utility Functions
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
         }
     </script>
 </body>
