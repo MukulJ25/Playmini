@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Games Collection</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.0.0/css/all.min.css">
+    <style>
+        /* Game-specific styles */
+        .game-container {
+            display: none;
+        }
+        .game-container.active {
+            display: block;
+        }
+        
+        /* Snake Game */
+        #snake-game {
+            background-color: #000;
+            position: relative;
+        }
+        .snake-pixel {
+            position: absolute;
+            background-color: #0f0;
+            border-radius: 2px;
+        }
+        .food-pixel {
+            position: absolute;
+            background-color: #f00;
+            border-radius: 50%;
+        }
+        
+        /* Tic Tac Toe */
+        .cell {
+            width: 100px;
+            height: 100px;
+            border: 2px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            cursor: pointer;
+            background-color: #f8f9fa;
+        }
+        
+        /* Memory Game */
+        .memory-card {
+            width: 100px;
+            height: 100px;
+            margin: 5px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.5s;
+            cursor: pointer;
+        }
+        .memory-card.flip {
+            transform: rotateY(180deg);
+        }
+        .front-face, .back-face {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            backface-visibility: hidden;
+            border-radius: 5px;
+        }
+        .front-face {
+            transform: rotateY(180deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            background-color: #fff;
+            color: #333;
+            border: 2px solid #333;
+        }
+        .back-face {
+            background-color: #2980b9;
+            border: 2px solid #333;
+        }
+        
+        /* 2048 Game */
+        .grid-2048 {
+            display: grid;
+            grid-template-columns: repeat(4, 80px);
+            grid-template-rows: repeat(4, 80px);
+            gap: 10px;
+            background-color: #bbada0;
+            border-radius: 5px;
+            padding: 10px;
+        }
+        .grid-cell {
+            background-color: #cdc1b4;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .tile {
+            width: 80px;
+            height: 80px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #776e65;
+        }
+        .tile-2 { background-color: #eee4da; }
+        .tile-4 { background-color: #ede0c8; }
+        .tile-8 { background-color: #f2b179; color: #f9f6f2; }
+        .tile-16 { background-color: #f59563; color: #f9f6f2; }
+        .tile-32 { background-color: #f67c5f; color: #f9f6f2; }
+        .tile-64 { background-color: #f65e3b; color: #f9f6f2; }
+        .tile-128 { background-color: #edcf72; color: #f9f6f2; font-size: 20px; }
+        .tile-256 { background-color: #edcc61; color: #f9f6f2; font-size: 20px; }
+        .tile-512 { background-color: #edc850; color: #f9f6f2; font-size: 20px; }
+        .tile-1024 { background-color: #edc53f; color: #f9f6f2; font-size: 18px; }
+        .tile-2048 { background-color: #edc22e; color: #f9f6f2; font-size: 18px; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-4xl font-bold text-center mb-6 text-blue-600">Simple Games Collection</h1>
+        
+        <!-- Game Navigation -->
+        <div class="flex justify-center mb-8">
+            <button id="snake-btn" class="game-nav-btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mx-2">Snake</button>
+            <button id="tictactoe-btn" class="game-nav-btn bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded mx-2">Tic Tac Toe</button>
+            <button id="memory-btn" class="game-nav-btn bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded mx-2">Memory Match</button>
+            <button id="2048-btn" class="game-nav-btn bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded mx-2">2048</button>
+        </div>
+        
+        <!-- Snake Game -->
+        <div id="snake-container" class="game-container">
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <h2 class="text-2xl font-bold mb-4 text-center">Snake Game</h2>
+                <div class="flex flex-col items-center">
+                    <div class="mb-4">
+                        <span class="font-bold">Score: </span>
+                        <span id="snake-score">0</span>
+                    </div>
+                    <div id="snake-game" class="w-96 h-96 border border-gray-400"></div>
+                    <button id="snake-start" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Start Game</button>
+                </div>
+                <div class="mt-6 text-gray-700">
+                    <h3 class="font-bold text-lg mb-2">Instructions:</h3>
+                    <ul class="list-disc pl-6">
+                        <li>Use arrow keys to move the snake</li>
+                        <li>Eat the red food to grow and score points</li>
+                        <li>Avoid hitting the walls or yourself</li>
+                        <li>Press the Start Game button to begin</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tic Tac Toe Game -->
+        <div id="tictactoe-container" class="game-container">
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <h2 class="text-2xl font-bold mb-4 text-center">Tic Tac Toe</h2>
+                <div class="flex flex-col items-center">
+                    <div id="status" class="mb-4 font-bold">Player X's turn</div>
+                    <div class="grid grid-cols-3 gap-0 mb-4">
+                        <div class="cell" data-index="0"></div>
+                        <div class="cell" data-index="1"></div>
+                        <div class="cell" data-index="2"></div>
+                        <div class="cell" data-index="3"></div>
+                        <div class="cell" data-index="4"></div>
+                        <div class="cell" data-index="5"></div>
+                        <div class="cell" data-index="6"></div>
+                        <div class="cell" data-index="7"></div>
+                        <div class="cell" data-index="8"></div>
+                    </div>
+                    <button id="reset-ttt" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">Reset Game</button>
+                </div>
+                <div class="mt-6 text-gray-700">
+                    <h3 class="font-bold text-lg mb-2">Instructions:</h3>
+                    <ul class="list-disc pl-6">
+                        <li>Players take turns placing X and O on the board</li>
+                        <li>First player to get 3 in a row (horizontally, vertically, or diagonally) wins</li>
+                        <li>If all cells are filled without a winner, the game is a draw</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Memory Match Game -->
+        <div id="memory-container" class="game-container">
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <h2 class="text-2xl font-bold mb-4 text-center">Memory Match</h2>
+                <div class="flex flex-col items-center">
+                    <div class="mb-4">
+                        <span class="font-bold">Moves: </span>
+                        <span id="moves">0</span>
+                    </div>
+                    <div id="memory-game" class="grid grid-cols-4 gap-2 mb-4"></div>
+                    <button id="reset-memory" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded">Reset Game</button>
+                </div>
+                <div class="mt-6 text-gray-700">
+                    <h3 class="font-bold text-lg mb-2">Instructions:</h3>
+                    <ul class="list-disc pl-6">
+                        <li>Click on cards to flip them over</li>
+                        <li>Try to find matching pairs of symbols</li>
+                        <li>Once a pair is found, those cards stay flipped</li>
+                        <li>The game is complete when all pairs are matched</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 2048 Game -->
+        <div id="2048-container" class="game-container">
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <h2 class="text-2xl font-bold mb-4 text-center">2048</h2>
+                <div class="flex flex-col items-center">
+                    <div class="mb-4">
+                        <span class="font-bold">Score: </span>
+                        <span id="score-2048">0</span>
+                    </div>
+                    <div class="grid-2048 mb-4"></div>
+                    <button id="reset-2048" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded">New Game</button>
+                </div>
+                <div class="mt-6 text-gray-700">
+                    <h3 class="font-bold text-lg mb-2">Instructions:</h3>
+                    <ul class="list-disc pl-6">
+                        <li>Use arrow keys to move tiles</li>
+                        <li>When two tiles with the same number touch, they merge into one</li>
+                        <li>Try to create a tile with the number 2048</li>
+                        <li>If the grid fills up and no more moves are possible, the game is over</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Navigation
+        document.addEventListener('DOMContentLoaded', () => {
+            const gameContainers = document.querySelectorAll('.game-container');
+            const gameButtons = document.querySelectorAll('.game-nav-btn');
+            
+            // Show Snake Game by default
+            document.getElementById('snake-container').classList.add('active');
+            
+            gameButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const gameId = button.id.split('-')[0] + '-container';
+                    
+                    // Hide all game containers
+                    gameContainers.forEach(container => {
+                        container.classList.remove('active');
+                    });
+                    
+                    // Show selected game container
+                    document.getElementById(gameId).classList.add('active');
+                });
+            });
+            
+            // Initialize all games
+            initSnakeGame();
+            initTicTacToe();
+            initMemoryGame();
+            init2048Game();
+        });
+        
+        // Snake Game
+        function initSnakeGame() {
+            const gameBoard = document.getElementById('snake-game');
+            const scoreDisplay = document.getElementById('snake-score');
+            const startButton = document.getElementById('snake-start');
+            
+            const boardSize = 20; // 20x20 grid
+            const pixelSize = Math.floor(gameBoard.offsetWidth / boardSize);
+            let snake = [{x: 10, y: 10}]; // Start with 1 segment
+            let food = {x: 15, y: 15};
+            let direction = 'right';
+            let nextDirection = 'right';
+            let score = 0;
+            let gameInterval;
+            let isGameOver = false;
+            
+            function drawPixel(x, y, className) {
+                const pixel = document.createElement('div');
+                pixel.classList.add(className);
+                pixel.style.width = `${pixelSize}px`;
+                pixel.style.height = `${pixelSize}px`;
+                pixel.style.left = `${x * pixelSize}px`;
+                pixel.style.top = `${y * pixelSize}px`;
+                gameBoard.appendChild(pixel);
+            }
+            
+            function clearBoard() {
+                while (gameBoard.firstChild) {
+                    gameBoard.removeChild(gameBoard.firstChild);
+                }
+            }
+            
+            function drawGame() {
+                clearBoard();
+                
+                // Draw snake
+                snake.forEach(segment => {
+                    drawPixel(segment.x, segment.y, 'snake-pixel');
+                });
+                
+                // Draw food
+                drawPixel(food.x, food.y, 'food-pixel');
+            }
+            
+            function moveSnake() {
+                if (isGameOver) return;
+                
+                // Update direction
+                direction = nextDirection;
+                
+                // Calculate new head position
+                const head = {...snake[0]};
+                
+                switch (direction) {
+                    case 'up': head.y--; break;
+                    case 'down': head.y++; break;
+                    case 'left': head.x--; break;
+                    case 'right': head.x++; break;
+                }
+                
+                // Check for collisions with walls
+                if (head.x < 0 || head.y < 0 || head.x >= boardSize || head.y >= boardSize) {
+                    gameOver();
+                    return;
+                }
+                
+                // Check for collisions with self
+                if (snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+                    gameOver();
+                    return;
+                }
+                
+                // Add new head
+                snake.unshift(head);
+                
+                // Check if food is eaten
+                if (head.x === food.x && head.y === food.y) {
+                    // Generate new food
+                    generateFood();
+                    // Increase score
+                    score += 10;
+                    scoreDisplay.textContent = score;
+                } else {
+                    // Remove tail
+                    snake.pop();
+                }
+                
+                drawGame();
+            }
+            
+            function generateFood() {
+                // Generate random position for food
+                let newFood;
+                do {
+                    newFood = {
+                        x: Math.floor(Math.random() * boardSize),
+                        y: Math.floor(Math.random() * boardSize)
+                    };
+                    // Make sure food doesn't appear on the snake
+                } while (snake.some(segment => segment.x === newFood.x && segment.y === newFood.y));
+                
+                food = newFood;
+            }
+            
+            function gameOver() {
+                isGameOver = true;
+                clearInterval(gameInterval);
+                alert(`Game Over! Your score: ${score}`);
+            }
+            
+            function startGame() {
+                // Reset game state
+                snake = [{x: 10, y: 10}];
+                direction = 'right';
+                nextDirection = 'right';
+                score = 0;
+                isGameOver = false;
+                scoreDisplay.textContent = '0';
+                
+                generateFood();
+                drawGame();
+                
+                // Clear previous interval if it exists
+                if (gameInterval) clearInterval(gameInterval);
+                
+                // Start game loop
+                gameInterval = setInterval(moveSnake, 150);
+            }
+            
+            // Event listeners
+            startButton.addEventListener('click', startGame);
+            
+            document.addEventListener('keydown', (e) => {
+                // Prevent default arrow key behavior to avoid page scrolling
+                if (e.key.includes('Arrow')) {
+                    e.preventDefault();
+                }
+                
+                switch (e.key) {
+                    case 'ArrowUp':
+                        if (direction !== 'down') nextDirection = 'up';
+                        break;
+                    case 'ArrowDown':
+                        if (direction !== 'up') nextDirection = 'down';
+                        break;
+                    case 'ArrowLeft':
+                        if (direction !== 'right') nextDirection = 'left';
+                        break;
+                    case 'ArrowRight':
+                        if (direction !== 'left') nextDirection = 'right';
+                        break;
+                }
+            });
+        }
+        
+        // Tic Tac Toe
+        function initTicTacToe() {
+            const cells = document.querySelectorAll('.cell');
+            const status = document.getElementById('status');
+            const resetButton = document.getElementById('reset-ttt');
+            
+            let currentPlayer = 'X';
+            let gameState = ['', '', '', '', '', '', '', '', ''];
+            let gameActive = true;
+            
+            const winningConditions = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+                [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
+                [0, 4, 8], [2, 4, 6]             // diagonals
+            ];
+            
+            function handleCellClick(e) {
+                const clickedCell = e.target;
+                const clickedCellIndex = parseInt(clickedCell.getAttribute('data-index'));
+                
+                if (gameState[clickedCellIndex] !== '' || !gameActive) {
+                    return;
+                }
+                
+                gameState[clickedCellIndex] = currentPlayer;
+                clickedCell.textContent = currentPlayer;
+                
+                checkResult();
+            }
+            
+            function checkResult() {
+                let roundWon = false;
+                
+                for (let i = 0; i < winningConditions.length; i++) {
+                    const [a, b, c] = winningConditions[i];
+                    
+                    if (gameState[a] === '' || gameState[b] === '' || gameState[c] === '') {
+                        continue;
+                    }
+                    
+                    if (gameState[a] === gameState[b] && gameState[b] === gameState[c]) {
+                        roundWon = true;
+                        break;
+                    }
+                }
+                
+                if (roundWon) {
+                    status.textContent = `Player ${currentPlayer} wins!`;
+                    gameActive = false;
+                    return;
+                }
+                
+                if (!gameState.includes('')) {
+                    status.textContent = "Game ended in a draw!";
+                    gameActive = false;
+                    return;
+                }
+                
+                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                status.textContent = `Player ${currentPlayer}'s turn`;
+            }
+            
+            function resetGame() {
+                currentPlayer = 'X';
+                gameState = ['', '', '', '', '', '', '', '', ''];
+                gameActive = true;
+                status.textContent = `Player ${currentPlayer}'s turn`;
+                
+                cells.forEach(cell => {
+                    cell.textContent = '';
+                });
+            }
+            
+            // Event listeners
+            cells.forEach(cell => {
+                cell.addEventListener('click', handleCellClick);
+            });
+            
+            resetButton.addEventListener('click', resetGame);
+        }
+        
+        // Memory Match Game
+        function initMemoryGame() {
+            const memoryGame = document.getElementById('memory-game');
+            const resetButton = document.getElementById('reset-memory');
+            const movesDisplay = document.getElementById('moves');
+            
+            const symbols = ['🌟', '🍎', '🌈', '🚀', '🎮', '🐱', '🌺', '💻'];
+            let cards = [...symbols, ...symbols];
+            let moves = 0;
+            let flippedCards = [];
+            let matchedPairs = 0;
+            let isProcessing = false;
+            
+            function shuffleCards() {
+                for (let i = cards.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [cards[i], cards[j]] = [cards[j], cards[i]];
+                }
+            }
+            
+            function createBoard() {
+                memoryGame.innerHTML = '';
+                shuffleCards();
+                matchedPairs = 0;
+                moves = 0;
+                movesDisplay.textContent = moves;
+                
+                cards.forEach((symbol, index) => {
+                    const card = document.createElement('div');
+                    card.classList.add('memory-card');
+                    card.dataset.index = index;
+                    
+                    const frontFace = document.createElement('div');
+                    frontFace.classList.add('front-face');
+                    frontFace.textContent = symbol;
+                    
+                    const backFace = document.createElement('div');
+                    backFace.classList.add('back-face');
+                    
+                    card.appendChild(frontFace);
+                    card.appendChild(backFace);
+                    
+                    card.addEventListener('click', flipCard);
+                    memoryGame.appendChild(card);
+                });
+            }
+            
+            function flipCard() {
+                if (isProcessing) return;
+                
+                const selectedCard = this;
+                const cardIndex = selectedCard.dataset.index;
+                
+                // Prevent clicking on the same card or already matched cards
+                if (selectedCard.classList.contains('flip') || flippedCards.includes(cardIndex)) {
+                    return;
+                }
+                
+                // Flip the card
+                selectedCard.classList.add('flip');
+                flippedCards.push(cardIndex);
+                
+                // If we flipped two cards
+                if (flippedCards.length === 2) {
+                    isProcessing = true;
+                    moves++;
+                    movesDisplay.textContent = moves;
+                    
+                    const firstCardIndex = flippedCards[0];
+                    const secondCardIndex = flippedCards[1];
+                    
+                    // Check if they match
+                    if (cards[firstCardIndex] === cards[secondCardIndex]) {
+                        // Cards match
+                        flippedCards = [];
+                        matchedPairs++;
+                        
+                        if (matchedPairs === symbols.length) {
+                            setTimeout(() => {
+                                alert(`Congratulations! You completed the game in ${moves} moves.`);
+                            }, 500);
+                        }
+                        
+                        isProcessing = false;
+                    } else {
+                        // Cards don't match, flip them back
+                        setTimeout(() => {
+                            const firstCard = document.querySelector(`.memory-card[data-index="${firstCardIndex}"]`);
+                            const secondCard = document.querySelector(`.memory-card[data-index="${secondCardIndex}"]`);
+                            
+                            firstCard.classList.remove('flip');
+                            secondCard.classList.remove('flip');
+                            
+                            flippedCards = [];
+                            isProcessing = false;
+                        }, 1000);
+                    }
+                }
+            }
+            
+            // Event listeners
+            resetButton.addEventListener('click', createBoard);
+            
+            // Initialize the game
+            createBoard();
+        }
+        
+        // 2048 Game
+        function init2048Game() {
+            const gridContainer = document.querySelector('.grid-2048');
+            const scoreDisplay = document.getElementById('score-2048');
+            const resetButton = document.getElementById('reset-2048');
+            
+            let grid = [];
+            let score = 0;
+            
+            function createGrid() {
+                // Clear existing grid
+                gridContainer.innerHTML = '';
+                
+                // Create a 4x4 grid
+                for (let i = 0; i < 4; i++) {
+                    grid[i] = [];
+                    for (let j = 0; j < 4; j++) {
+                        grid[i][j] = 0;
+                        
+                        const cell = document.createElement('div');
+                        cell.classList.add('grid-cell');
+                        cell.dataset.row = i;
+                        cell.dataset.col = j;
+                        gridContainer.appendChild(cell);
+                    }
+                }
+            }
+            
+            function updateGrid() {
+                // Update the visual representation of the grid
+                const cells = document.querySelectorAll('.grid-cell');
+                cells.forEach(cell => {
+                    const row = parseInt(cell.dataset.row);
+                    const col = parseInt(cell.dataset.col);
+                    const value = grid[row][col];
+                    
+                    // Clear the cell
+                    cell.innerHTML = '';
+                    
+                    if (value > 0) {
+                        const tile = document.createElement('div');
+                        tile.classList.add('tile', `tile-${value}`);
+                        tile.textContent = value;
+                        cell.appendChild(tile);
+                    }
+                });
+                
+                // Update score
+                scoreDisplay.textContent = score;
+            }
+            
+            function addRandomTile() {
+                // Find all empty cells
+                const emptyCells = [];
+                for (let i = 0; i < 4; i++) {
+                    for (let j = 0; j < 4; j++) {
+                        if (grid[i][j] === 0) {
+                            emptyCells.push({row: i, col: j});
+                        }
+                    }
+                }
+                
+                if (emptyCells.length === 0) return;
+                
+                // Pick a random empty cell
+                const randomCell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+                
+                // Add a 2 or 4 (90% chance for 2, 10% chance for 4)
+                grid[randomCell.row][randomCell.col] = Math.random() < 0.9 ? 2 : 4;
+            }
+            
+            function moveLeft() {
+                let moved = false;
+                
+                for (let i = 0; i < 4; i++) {
+                    const row = grid[i].filter(val => val !== 0);
+                    let newRow = [];
+                    
+                    // Merge adjacent identical numbers
+                    for (let j = 0; j < row.length; j++) {
+                        if (j < row.length - 1 && row[j] === row[j + 1]) {
+                            newRow.push(row[j] * 2);
+                            score += row[j] * 2;
+                            j++;
+                            moved = true;
+                        } else {
+                            newRow.push(row[j]);
+                        }
+                    }
+                    
+                    // Pad with zeros
+                    while (newRow.length < 4) {
+                        newRow.push(0);
+                    }
+                    
+                    // Check if the row has changed
+                    if (grid[i].join(',') !== newRow.join(',')) {
+                        moved = true;
+                    }
+                    
+                    grid[i] = newRow;
+                }
+                
+                return moved;
+            }
+            
+            function moveRight() {
+                let moved = false;
+                
+                for (let i = 0; i < 4; i++) {
+                    const row = grid[i].filter(val => val !== 0);
+                    let newRow = [];
+                    
+                    // Merge adjacent identical numbers (from right to left)
+                    for (let j = row.length - 1; j >= 0; j--) {
+                        if (j > 0 && row[j] === row[j - 1]) {
+                            newRow.unshift(row[j] * 2);
+                            score += row[j] * 2;
+                            j--;
+                            moved = true;
+                        } else {
+                            newRow.unshift(row[j]);
+                        }
+                    }
+                    
+                    // Pad with zeros
+                    while (newRow.length < 4) {
+                        newRow.unshift(0);
+                    }
+                    
+                    // Check if the row has changed
+                    if (grid[i].join(',') !== newRow.join(',')) {
+                        moved = true;
+                    }
+                    
+                    grid[i] = newRow;
+                }
+                
+                return moved;
+            }
+            
+            function moveUp() {
+                let moved = false;
+                
+                for (let j = 0; j < 4; j++) {
+                    // Extract column
+                    let column = [];
+                    for (let i = 0; i < 4; i++) {
+                        column.push(grid[i][j]);
+                    }
+                    
+                    // Filter out zeros
+                    column = column.filter(val => val !== 0);
+                    
+                    // Merge adjacent identical numbers
+                    let newColumn = [];
+                    for (let i = 0; i < column.length; i++) {
+                        if (i < column.length - 1 && column[i] === column[i + 1]) {
+                            newColumn.push(column[i] * 2);
+                            score += column[i] * 2;
+                            i++;
+                            moved = true;
+                        } else {
+                            newColumn.push(column[i]);
+                        }
+                    }
+                    
+                    // Pad with zeros
+                    while (newColumn.length < 4) {
+                        newColumn.push(0);
+                    }
+                    
+                    // Update the grid column
+                    for (let i = 0; i < 4; i++) {
+                        if (grid[i][j] !== newColumn[i]) {
+                            moved = true;
+                        }
+                        grid[i][j] = newColumn[i];
+                    }
+                }
+                
+                return moved;
+            }
+            
+            function moveDown() {
+                let moved = false;
+                
+                for (let j = 0; j < 4; j++) {
+                    // Extract column
+                    let column = [];
+                    for (let i = 0; i < 4; i++) {
+                        column.push(grid[i][j]);
+                    }
+                    
+                    // Filter out zeros
+                    column = column.filter(val => val !== 0);
+                    
+                    // Merge adjacent identical numbers (from bottom to top)
+                    let newColumn = [];
+                    for (let i = column.length - 1; i >= 0; i--) {
+                        if (i > 0 && column[i] === column[i - 1]) {
+                            newColumn.unshift(column[i] * 2);
+                            score += column[i] * 2;
+                            i--;
+                            moved = true;
+                        } else {
+                            newColumn.unshift(column[i]);
+                        }
+                    }
+                    
+                    // Pad with zeros
+                    while (newColumn.length < 4) {
+                        newColumn.unshift(0);
+                    }
+                    
+                    // Update the grid column
+                    for (let i = 0; i < 4; i++) {
+                        if (grid[i][j] !== newColumn[i]) {
+                            moved = true;
+                        }
+                        grid[i][j] = newColumn[i];
+                    }
+                }
+                
+                return moved;
+            }
+            
+            function checkGameOver() {
+                // Check if there are any empty cells
+                for (let i = 0; i < 4; i++) {
+                    for (let j = 0; j < 4; j++) {
+                        if (grid[i][j] === 0) {
+                            return false;
+                        }
+                    }
+                }
+                
+                // Check if any adjacent cells have the same value
+                for (let i = 0; i < 4; i++) {
+                    for (let j = 0; j < 4; j++) {
+                        // Check right
+                        if (j < 3 && grid[i][j] === grid[i][j + 1]) {
+                            return false;
+                        }
+                        // Check down
+                        if (i < 3 && grid[i][j] === grid[i + 1][j]) {
+                            return false;
+                        }
+                    }
+                }
+                
+                return true;
+            }
+            
+            function handleKeyDown(e) {
+                let moved = false;
+                
+                switch (e.key) {
+                    case 'ArrowLeft':
+                        e.preventDefault();
+                        moved = moveLeft();
+                        break;
+                    case 'ArrowRight':
+                        e.preventDefault();
+                        moved = moveRight();
+                        break;
+                    case 'ArrowUp':
+                        e.preventDefault();
+                        moved = moveUp();
+                        break;
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        moved = moveDown();
+                        break;
+                }
+                
+                if (moved) {
+                    addRandomTile();
+                    updateGrid();
+                    
+                    if (checkGameOver()) {
+                        alert(`Game Over! Your score: ${score}`);
+                    }
+                }
+            }
+            
+            function startNewGame() {
+                grid = Array(4).fill().map(() => Array(4).fill(0));
+                score = 0;
+                
+                createGrid();
+                addRandomTile();
+                addRandomTile();
+                updateGrid();
+            }
+            
+            // Event listeners
+            document.addEventListener('keydown', handleKeyDown);
+            resetButton.addEventListener('click', startNewGame);
+            
+            // Initialize the game
+            startNewGame();
+        }
+    </script>
+</body>
+</html>
